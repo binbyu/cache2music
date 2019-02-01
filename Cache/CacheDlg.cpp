@@ -676,10 +676,6 @@ BOOL CCacheDlg::HttpRequest(CString szId, std::string& response)
 				}
 			}
 		}
-
-		FILE *fp = fopen("response.txt", "wb+");
-		fwrite(response.c_str(), 1, response.size(), fp);
-		fclose(fp);
 	}
 	
 	goto_end(TRUE, _T(""));
