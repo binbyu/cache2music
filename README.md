@@ -1,0 +1,14 @@
+# cache2music
+It is used to download free songs from NetEase Cloud Music.
+
+这是一个使用VS2010 MFC开发的一个小程序。
+程序功能用于免费下载网易云音乐上面的歌曲。（仅供学习参考）
+转换音乐缓存文件给MP3音乐文件。
+步骤如下：
+1. 获取缓存文件列表
+2. 从缓存文件名，解析出歌曲id（如：108224-128-83be80389ba1192e3536b23fe5e27c03.uc 则歌曲ID为108224）
+3. 使用歌曲ID构建网易云音乐web api （如：http://music.163.com/api/song/detail/?id=108224&ids=%5B108224%5D）
+4. 使用http get请求获取歌曲信息，信息格式为JSON，如下：
+{"songs":[{"name":"突然想起你(Live)","id":108224,"position":3,"alias":[],"status":0,"fee":8,"copyrightId":677020,"disc":"1","no":3,"artists":[{"name":"林宥嘉","id":3685,"picId":0,"img1v1Id":0,"briefDesc":"","picUrl":"http://p1.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg","img1v1Url":"http://p1.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg","albumSize":0,"alias":[],"trans":"","musicSize":0}],"album":{"name":"Senses Around Live Tour","id":10754,"type":"专辑","size":17,"picId":86861418608084,"blurPicUrl":"http://p1.music.126.net/GS_4amMwxwoVuKILjGQDlg==/86861418608084.jpg","companyId":0,"pic":86861418608084,"picUrl":"http://p1.music.126.net/GS_4amMwxwoVuKILjGQDlg==/86861418608084.jpg","publishTime":1304611200000,"description":"","tags":"","company":"华研国际","briefDesc":"","artist":{"name":"","id":0,"picId":0,"img1v1Id":0,"briefDesc":"","picUrl":"http://p1.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg","img1v1Url":"http://p1.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg","albumSize":0,"alias":[],"trans":"","musicSize":0},"songs":[],"alias":["感官/世界 巡迴音乐会精华萃选17首"],"status":40,"copyrightId":0,"commentThreadId":"R_AL_3_10754","artists":[{"name":"林宥嘉","id":3685,"picId":0,"img1v1Id":0,"briefDesc":"","picUrl":"http://p1.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg","img1v1Url":"http://p1.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg","albumSize":0,"alias":[],"trans":"","musicSize":0}],"subType":"现场版","transName":null},"starred":false,"popularity":100.0,"score":100,"starredNum":0,"duration":279589,"playedNum":0,"dayPlays":0,"hearTime":0,"ringtone":"","crbt":null,"audition":null,"copyFrom":"","commentThreadId":"R_SO_4_108224","rtUrl":null,"ftype":0,"rtUrls":[],"copyright":0,"transName":null,"sign":null,"mvid":0,"hMusic":{"name":"突然想起你 (Live)","id":12600800,"size":11201945,"extension":"mp3","sr":44100,"dfsId":0,"bitrate":320000,"playTime":279589,"volumeDelta":-0.42},"mMusic":{"name":"突然想起你 (Live)","id":12600801,"size":5615399,"extension":"mp3","sr":44100,"dfsId":0,"bitrate":160000,"playTime":279589,"volumeDelta":0.0},"lMusic":{"name":"突然想起你 (Live)","id":12600802,"size":3380363,"extension":"mp3","sr":44100,"dfsId":0,"bitrate":96000,"playTime":279589,"volumeDelta":-0.02},"bMusic":{"name":"突然想起你 (Live)","id":12600802,"size":3380363,"extension":"mp3","sr":44100,"dfsId":0,"bitrate":96000,"playTime":279589,"volumeDelta":-0.02},"rtype":0,"rurl":null,"mp3Url":null}],"equalizers":{"108224":"pop"},"code":200}
+5. 解析Json获取音乐名字
+6. 解码缓存uc文件，解码算法为：遍历uc文件里面的每一个byte，异或0xA3，然后写入新的文件。新的文件即是生成的mp3文件。
