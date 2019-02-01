@@ -113,7 +113,7 @@ BOOL CCacheDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	// TODO: Add extra initialization here
-	PostMessage(WM_LBUTTONDBLCLK);
+	//PostMessage(WM_LBUTTONDBLCLK);
 
 	// Init list
 	CListCtrl* list = (CListCtrl*)GetDlgItem(IDC_LIST);
@@ -542,7 +542,8 @@ BOOL CCacheDlg::HttpRequest(CString szId, std::string& response)
 	std::string header;
 	char buf[4096] = {0};
 	int size = 0;
-	int content_length;
+	int content_length = -1;
+	int chunkedsize = 0;
 
 	host = gethostbyname("music.163.com");
 	if (!host)
@@ -599,27 +600,88 @@ BOOL CCacheDlg::HttpRequest(CString szId, std::string& response)
 
 	// parse 'Content-Length'
 	transform(header.begin(), header.end(), header.begin(), tolower);
-	header = header.substr(header.find("content-length"),std::string::npos);
-	header = header.substr(header.find(":")+1,std::string::npos);
-	header = header.substr(0,header.find("\r\n"));
-	content_length = atoi(header.c_str());
-
-	// recv body
-	response.clear();
-	while (1)
+	if (header.find("content-length") != -1)
 	{
-		memset(buf, 0, sizeof(buf));
-		ret = recv(sockfd, buf, 4096-1, 0);
-		if (ret > 0)
+		header = header.substr(header.find("content-length"),std::string::npos);
+		header = header.substr(header.find(":")+1,std::string::npos);
+		header = header.substr(0,header.find("\r\n"));
+		content_length = atoi(header.c_str());
+
+		// recv body
+		response.clear();
+		while (1)
 		{
-			response.append(buf);
-			content_length -= ret;
-			if (content_length <= 0)
+			memset(buf, 0, sizeof(buf));
+			ret = recv(sockfd, buf, 4096-1, 0);
+			if (ret > 0)
 			{
-				break;
+				response.append(buf);
+				content_length -= ret;
+				if (content_length <= 0)
+				{
+					break;
+				}
 			}
 		}
 	}
+	else
+	{
+		//Transfer-Encoding: chunked
+
+		// recv body
+		response.clear();
+		size = 0;
+		header.clear();
+		while (1)
+		{
+			memset(buf, 0, 2);
+			ret = recv(sockfd, buf, 1, 0);
+			if (ret > 0)
+			{
+				header.append(buf);
+				size += ret;
+				if (size >= 2)
+				{
+					if ('\n' == header[size-1]
+					&& '\r' == header[size-2])
+					{
+						if (size == 2)
+						{
+							header.clear();
+							size = 0;
+							continue;
+						}
+
+						// chunked size
+						header[size-2] = 0;
+						sscanf(header.c_str(), "%x\r\n", &chunkedsize);
+						if (chunkedsize == 0)
+							break;
+
+						header.clear();
+						size = 0;
+
+						// recv chunked data
+						while (chunkedsize > 0)
+						{
+							memset(buf, 0, sizeof(buf));
+							ret = recv(sockfd, buf, 4096-1 > chunkedsize ? chunkedsize : 4096-1, 0);
+							if (ret > 0)
+							{
+								response.append(buf);
+								chunkedsize -= ret;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		FILE *fp = fopen("response.txt", "wb+");
+		fwrite(response.c_str(), 1, response.size(), fp);
+		fclose(fp);
+	}
+	
 	goto_end(TRUE, _T(""));
 }
 
