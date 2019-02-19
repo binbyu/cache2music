@@ -70,6 +70,7 @@ BEGIN_MESSAGE_MAP(CCacheDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_WM_LBUTTONDBLCLK()
 	ON_BN_CLICKED(IDC_BUTTON_BROWSER, &CCacheDlg::OnBnClickedButtonBrowser)
+	ON_BN_CLICKED(IDC_BUTTON_BROWSER2, &CCacheDlg::OnBnClickedButtonBrowser2)
 	ON_BN_CLICKED(IDC_BUTTON_START, &CCacheDlg::OnBnClickedButtonStart)
 	ON_MESSAGE(WM_LOAD_FILES, &CCacheDlg::OnMessageLoadFiles)
 	ON_MESSAGE(WM_UPDATE_LIST, &CCacheDlg::OnMessageUpdateList)
@@ -119,7 +120,7 @@ BOOL CCacheDlg::OnInitDialog()
 	CListCtrl* list = (CListCtrl*)GetDlgItem(IDC_LIST);
 	CRect rect;
 	list->GetClientRect(rect);
-	list->SetExtendedStyle(list->GetExtendedStyle() | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_CHECKBOXES);
+	list->SetExtendedStyle(list->GetExtendedStyle() | LVS_EX_FULLROWSELECT | LVS_EX_CHECKBOXES /*| LVS_EX_GRIDLINES | LVS_EX_AUTOCHECKSELECT*/);
 	list->InsertColumn(1, _T("Cache"), LVCFMT_LEFT, rect.Width() / 2, 0);
 	list->InsertColumn(2, _T("Music"), LVCFMT_LEFT, rect.Width() / 2, 1);
 	list->InsertColumn(3, _T("Format"), LVCFMT_LEFT, rect.Width() / 8, 2);
@@ -238,18 +239,30 @@ void CCacheDlg::OnBnClickedButtonBrowser()
 {
 	// TODO: Add your control notification handler code here
 	CFolderPickerDialog dlg;
+	TCHAR szPath[MAX_PATH] = {0};
 	if (IDOK == dlg.DoModal())
 	{
+		GetCurrentDirectory(MAX_PATH-1, szPath);
 		SetDlgItemText(IDC_EDIT_PATH, dlg.GetPathName());
+		SetDlgItemText(IDC_EDIT_PATH2, CString(szPath)+_T("\\music"));
 		PostMessage(WM_LOAD_FILES, 0, NULL);
 		GetDlgItem(IDC_BUTTON_DOWN)->EnableWindow(TRUE);
 	}
 	else
 	{
 		SetDlgItemText(IDC_EDIT_PATH, _T(""));
+		SetDlgItemText(IDC_EDIT_PATH2, _T(""));
 		((CListCtrl*)GetDlgItem(IDC_LIST))->DeleteAllItems();
 		GetDlgItem(IDC_BUTTON_DOWN)->EnableWindow(FALSE);
 	}
+}
+
+void CCacheDlg::OnBnClickedButtonBrowser2()
+{
+	CString path;
+	GetDlgItemText(IDC_EDIT_PATH2, path);
+	CreateDirectory(path, NULL);
+	ShellExecute(NULL, _T("open"), path, NULL, NULL, SW_SHOWDEFAULT);
 }
 
 
@@ -307,8 +320,9 @@ LRESULT CCacheDlg::OnMessageLoadFiles(WPARAM wParam, LPARAM lParam)
 		list->InsertItem(index, _T(""));
 		list->SetItemText(index, 0, findData.cFileName);
 		list->SetItemText(index, 2, szFormat);
-		list->SetCheck(index++, TRUE);
-		
+		list->SetCheck(index, TRUE);
+		list->SetItemState(index++, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
+
 	} while (FindNextFile(hFind, &findData));
 	FindClose(hFind);
 
@@ -765,8 +779,8 @@ DWORD WINAPI CCacheDlg::ThreadProcDownload(void* param)
 		// set item text
 		listInfo->nSubItem = 1;
 		listInfo->szText = new CString(info.szName+_T(".")+szFmt);
-		_this->PostMessage(WM_UPDATE_LIST, 0, (LPARAM)listInfo);
 		LOG_PRINT_EX(_T("Get music name success. name=")+*listInfo->szText);
+		_this->PostMessage(WM_UPDATE_LIST, 0, (LPARAM)listInfo);
 
 		// update progress
 		_this->PostMessage(WM_UPDATE_PROGRESS, i*100/list->GetItemCount(), NULL);
@@ -820,6 +834,10 @@ DWORD WINAPI CCacheDlg::ThreadProcStart(void* param)
 	_this->PostMessage(WM_ENABLE_BTN, 0x01);
 	_this->PostMessage(WM_UPDATE_PROGRESS, 100, NULL);
 	LOG_PRINT_EX(_T(">>> Convert uc to music completed."));
+	if (IDOK == _this->MessageBox(_T("转换成功\r\n点击确认打开mp3目录"), _T("转换成功"), MB_OK))
+	{
+		_this->OnBnClickedButtonBrowser2();
+	}
 
 	// clear
 	CloseHandle(_this->m_hThreadStart);

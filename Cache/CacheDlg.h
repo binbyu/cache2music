@@ -54,6 +54,7 @@ public:
 	afx_msg void OnClose();
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnBnClickedButtonBrowser();
+	afx_msg void OnBnClickedButtonBrowser2();
 	afx_msg void OnBnClickedButtonDown();
 	afx_msg void OnBnClickedButtonStart();
 	afx_msg LRESULT OnMessageLoadFiles(WPARAM wParam, LPARAM lParam);
